@@ -1,6 +1,13 @@
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
 import { decodeSuiPrivateKey } from "@mysten/sui.js/cryptography";
 
+const uint8ArrayToHex = (arr: Uint8Array) => {
+  return arr.reduce(
+    (str, byte) => str + byte.toString(16).padStart(2, "0"),
+    ""
+  );
+};
+
 export const generateWallet = (secretKey?: string) => {
   // generate wallet
   const keypair = (() => {
@@ -10,19 +17,15 @@ export const generateWallet = (secretKey?: string) => {
       );
     return new Ed25519Keypair();
   })();
-  //   const keypair = new Ed25519Keypair();
-  // const bytes = keypair.getPublicKey().toBase64();
-
-  // const publicKey = new Ed25519PublicKey(bytes);
-
-  //   const address = publicKey.toSuiAddress();
   const address = keypair.toSuiAddress();
-  const privateKey = keypair.getSecretKey();
-  //    keypair.getSecretKey
-  // const privateKey = decodeSuiPrivateKey(keypair.getSecretKey()).;
+  const privateKey = uint8ArrayToHex(
+    decodeSuiPrivateKey(keypair.getSecretKey()).secretKey
+  );
 
   return {
     address,
     privateKey,
   };
 };
+
+export const mining = () => {};
