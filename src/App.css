@@ -22,6 +22,9 @@
         &.cancel {
           @apply bg-[#FF4D4D] hover:bg-[#FF3B3B] active:bg-[#ff0c0c];
         }
+        &:disabled {
+          @apply bg-[#C0E6FF] text-black cursor-not-allowed;
+        }
       }
     }
   }
@@ -29,8 +32,24 @@
     @apply flex flex-col items-center justify-center gap-6 mt-8 max-sm:w-[90%] sm:min-w-[400px];
     @apply text-black;
 
-    & > input {
-      @apply bg-white py-3 px-6 text-center rounded-xl !placeholder-black w-full;
+    & > div {
+      @apply w-full flex flex-col items-start justify-center gap-1;
+      & > label {
+        @apply text-[14px] font-semibold text-white;
+      }
+      & > div {
+        @apply w-full flex items-center justify-center gap-3 bg-white rounded-xl pr-3;
+        & img {
+          @apply cursor-pointer;
+        }
+      }
+      & input {
+        @apply bg-white py-3 px-6 text-center rounded-xl !placeholder-black w-full;
+
+        &:focus {
+          @apply outline-none;
+        }
+      }
     }
   }
 

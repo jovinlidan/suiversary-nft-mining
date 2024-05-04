@@ -6,6 +6,8 @@ import { encodeKey, generateWallet } from "./utils/sui";
 import { SUI_TYPE_ARG, SuiKit } from "@scallop-io/sui-kit";
 import BigNumber from "bignumber.js";
 import { observeObjects, splitObjects } from "./utils/mining";
+import eyeOpen from "./assets/eye-open.svg";
+import eyeClose from "./assets/eye-close.svg";
 
 function App() {
   const [account, setAccount] = useState<{
@@ -22,6 +24,7 @@ function App() {
   const [recalculate, setRecalculate] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const isRunning = useRef(false);
+  const [showPrivateKey, setShowPrivateKey] = useState(false);
 
   useEffect(() => {
     document.title = "Suiversary NFT Mining";
@@ -89,7 +92,7 @@ function App() {
       await observeObjects(suiKit);
       await splitObjects(suiKit);
       setRecalculate((prev) => prev + 1);
-      console.log("finish...", isRunning.current);
+      console.log("continue: ", isRunning.current);
     }
   }, [suiKit]);
 
@@ -103,8 +106,12 @@ function App() {
         <span>SUI Objects: {objectCount.total}</span>
         <span>Found Object: {objectCount.found}</span>
         <div className="buttons">
-          <button onClick={handleMining}>
-            {loading ? "Mining..." : "Mining"}
+          <button onClick={handleMining} disabled={suiBalance === "0"}>
+            {suiBalance === "0"
+              ? "Please top up your address with SUI"
+              : loading
+              ? "Mining..."
+              : "Mining"}
           </button>
           {loading && (
             <button
@@ -121,20 +128,36 @@ function App() {
       </div>
 
       <div className="inputs">
-        <input
-          type="text"
-          placeholder="User Address"
-          className="user-address"
-          readOnly
-          value={account?.address}
-        />
-        <input
-          type="text"
-          placeholder="Private Key"
-          className="private-key"
-          readOnly
-          value={account?.privateKey}
-        />
+        <div>
+          <label>Address</label>
+          <input
+            type="text"
+            placeholder="User Address"
+            className="user-address"
+            readOnly
+            value={account?.address}
+          />
+        </div>
+        <div>
+          <label>Private Key</label>
+          <div>
+            <input
+              type={showPrivateKey ? "text" : "password"}
+              placeholder="Private Key"
+              className="private-key"
+              readOnly
+              style={{ paddingRight: 0 }}
+              autoComplete="off"
+              autoSave="off"
+              value={account?.privateKey}
+            />
+            <img
+              src={showPrivateKey ? eyeOpen : eyeClose}
+              alt="show-private-key"
+              onClick={() => setShowPrivateKey((prev) => !prev)}
+            />
+          </div>
+        </div>
       </div>
 
       <div className="how-to-play">
