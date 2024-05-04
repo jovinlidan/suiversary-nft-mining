@@ -163,29 +163,17 @@ function App() {
         <div>
           <label>Address</label>
           <div>
-            <input
-              type="text"
-              placeholder="User Address"
-              className="user-address"
-              readOnly
-              value={account?.address}
-            />
-
+            <span className="user-address">{account?.address}</span>
             <MemoizedCopyIcon text={account?.address} />
           </div>
         </div>
         <div>
           <label>Private Key</label>
           <div>
-            <input
-              type={showPrivateKey ? "text" : "password"}
-              placeholder="Private Key"
-              className="private-key"
-              readOnly
-              autoComplete="off"
-              autoSave="off"
-              value={account?.privateKey}
-            />
+            <span className="private-key">
+              {showPrivateKey ? account?.privateKey : "*".repeat(32)}
+            </span>
+
             <img
               src={showPrivateKey ? eyeOpen : eyeClose}
               alt="show-private-key"
