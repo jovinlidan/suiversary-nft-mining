@@ -9,6 +9,7 @@ import { observeObjects, splitObjects } from "./utils/mining";
 import eyeOpen from "./assets/eye-open.svg";
 import eyeClose from "./assets/eye-close.svg";
 import { Log, LogInput } from "./type";
+import MemoizedCopyIcon from "./components/copy-icon";
 
 function App() {
   const [account, setAccount] = useState<{
@@ -143,13 +144,17 @@ function App() {
       <div className="inputs">
         <div>
           <label>Address</label>
-          <input
-            type="text"
-            placeholder="User Address"
-            className="user-address"
-            readOnly
-            value={account?.address}
-          />
+          <div>
+            <input
+              type="text"
+              placeholder="User Address"
+              className="user-address"
+              readOnly
+              value={account?.address}
+            />
+
+            <MemoizedCopyIcon text={account?.address} />
+          </div>
         </div>
         <div>
           <label>Private Key</label>
@@ -159,7 +164,6 @@ function App() {
               placeholder="Private Key"
               className="private-key"
               readOnly
-              style={{ paddingRight: 0 }}
               autoComplete="off"
               autoSave="off"
               value={account?.privateKey}
@@ -169,6 +173,7 @@ function App() {
               alt="show-private-key"
               onClick={() => setShowPrivateKey((prev) => !prev)}
             />
+            <MemoizedCopyIcon text={account?.privateKey} />
           </div>
         </div>
       </div>

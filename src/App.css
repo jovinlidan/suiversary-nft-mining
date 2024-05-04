@@ -39,16 +39,17 @@
       }
       & > div {
         @apply w-full flex items-center justify-center gap-3 bg-white rounded-xl pr-3;
+
         & img {
           @apply cursor-pointer;
+
+          &.copy-icon {
+            @apply w-5 h-5;
+          }
         }
       }
       & input {
-        @apply bg-white py-3 px-6 text-center rounded-xl !placeholder-black w-full;
-
-        &:focus {
-          @apply outline-none;
-        }
+        @apply bg-white py-3 pl-6 text-center rounded-xl !placeholder-black w-full;
       }
     }
   }
