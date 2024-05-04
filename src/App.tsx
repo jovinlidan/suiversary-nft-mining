@@ -28,10 +28,6 @@ function App() {
   const [logs, setLogs] = useState<Log[]>([]);
 
   useEffect(() => {
-    document.title = "Suiversary NFT Mining";
-  }, []);
-
-  useEffect(() => {
     const cachedAccount = localStorage.getItem("account");
     if (cachedAccount) {
       const newAccount = generateWallet(encodeKey(JSON.parse(cachedAccount)));
