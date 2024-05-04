@@ -7,6 +7,7 @@ import {
 } from "@scallop-io/sui-kit";
 import { SuiObjectRef } from "@mysten/sui.js/client";
 import { contract } from "../contract/mainnet";
+import { AddNewLog } from "../type";
 
 type Coin = {
   value: string;
@@ -22,7 +23,12 @@ const refetchGas = async (gas: Coin, suiKit: SuiKit): Promise<Coin> => {
   };
 };
 
-const submitProof = async (coin: Coin, gas: Coin, suiKit: SuiKit) => {
+const submitProof = async (
+  coin: Coin,
+  gas: Coin,
+  suiKit: SuiKit,
+  addNewLog: AddNewLog
+) => {
   try {
     const txb = new SuiTxBlock();
     txb.setGasPayment([
@@ -49,11 +55,13 @@ const submitProof = async (coin: Coin, gas: Coin, suiKit: SuiKit) => {
     );
     return suiKit.signAndSendTxn(txb);
   } catch (e) {
-    console.error("Error when submitting proof: ", e);
+    addNewLog({
+      message: `Error when submitting proof: ${JSON.stringify(e)}`,
+    });
   }
 };
 
-export const splitObjects = async (suiKit: SuiKit) => {
+export const splitObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
   try {
     do {
       const txb = new SuiTxBlock();
@@ -77,33 +85,51 @@ export const splitObjects = async (suiKit: SuiKit) => {
       for (const changes of resp.objectChanges) {
         if (changes.type === "created") {
           if (changes.objectId.startsWith("0x0000")) {
-            console.log(`Hash Found: ${changes.objectId}`);
+            addNewLog({
+              message: `Hash Found: ${changes.objectId}`,
+            });
             ok = true;
           } else if (changes.objectId.startsWith("0x00")) {
-            console.log(`Almost rare: ${changes.objectId}`);
+            addNewLog({
+              message: `Almost rare: ${changes.objectId}`,
+            });
           }
         }
       }
 
       if (ok) {
         const resp = await suiKit.signAndSendTxn(txBytes);
-        console.log(`Creating hash: ${resp.digest}`);
+        addNewLog({
+          message: `Creating hash: ${resp.digest}`,
+        });
         break;
       } else {
-        console.log("No rare hash found.");
+        addNewLog({
+          message: "No rare hash found.",
+        });
 
         const txb = new SuiTxBlock();
         const resp = await suiKit.signAndSendTxn(txb);
-        console.log(`Updating version: ${resp.digest}`);
+        addNewLog({
+          message: `Updating version: ${resp.digest}`,
+        });
       }
     } while (true);
   } catch (e) {
-    console.error("Error when splitting objects: ", e);
+    addNewLog({
+      message: `Error when splitting objects: ${JSON.stringify(e)}`,
+      isError: true,
+    });
     throw e;
   }
 };
 
-const mergeObjects = async (coins: Array<Coin>, gas: Coin, suiKit: SuiKit) => {
+const mergeObjects = async (
+  coins: Array<Coin>,
+  gas: Coin,
+  suiKit: SuiKit,
+  addNewLog: AddNewLog
+) => {
   try {
     while (coins.length > 1) {
       const txb = new SuiTxBlock();
@@ -128,15 +154,19 @@ const mergeObjects = async (coins: Array<Coin>, gas: Coin, suiKit: SuiKit) => {
       const resp = await suiKit.signAndSendTxn(txb);
 
       gas = await refetchGas(gas, suiKit);
-      console.log(`Objects merged: ${resp.digest}`);
+      addNewLog({
+        message: `Objects merged: ${resp.digest}`,
+      });
     }
   } catch (e) {
-    console.error("Error when merging objects: ", e);
+    addNewLog({
+      message: `Error when merging objects: ${JSON.stringify(e)}`,
+    });
     throw e;
   }
 };
 
-export const observeObjects = async (suiKit: SuiKit) => {
+export const observeObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
   try {
     const coins = new Array<Coin>();
 
@@ -174,23 +204,32 @@ export const observeObjects = async (suiKit: SuiKit) => {
     for (let i = 0; i < coins.length; i++) {
       const coin = coins[i];
       if (coin.objectId.startsWith("0x0000")) {
-        const resp = await submitProof(coin, gas, suiKit);
+        const resp = await submitProof(coin, gas, suiKit, addNewLog);
         gas = await refetchGas(gas, suiKit);
-        console.log(`Proof submitted: ${resp?.digest}`);
+        addNewLog({
+          message: `Proof submitted: ${resp?.digest}`,
+        });
         coins.splice(i--, 1);
         counter++;
       }
     }
 
     if (counter > 0) {
-      console.log(`${counter} proofs submitted! NFT minted!`);
+      addNewLog({
+        message: `${counter} proofs submitted! NFT minted!`,
+      });
     } else {
-      console.log("No proof submitted");
+      addNewLog({
+        message: "No proof submitted",
+      });
     }
 
-    await mergeObjects(coins, gas, suiKit);
+    await mergeObjects(coins, gas, suiKit, addNewLog);
   } catch (e) {
-    console.error("Error when observing objects: ", e);
+    addNewLog({
+      message: `Error when observing objects: ${JSON.stringify(e)}`,
+      isError: true,
+    });
     throw e;
   }
 };

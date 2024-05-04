@@ -8,6 +8,7 @@ import BigNumber from "bignumber.js";
 import { observeObjects, splitObjects } from "./utils/mining";
 import eyeOpen from "./assets/eye-open.svg";
 import eyeClose from "./assets/eye-close.svg";
+import { Log, LogInput } from "./type";
 
 function App() {
   const [account, setAccount] = useState<{
@@ -20,11 +21,11 @@ function App() {
     found: number;
     total: number;
   }>({ found: 0, total: 0 });
-  // const [logs, setLogs] = useState<string[]>([]);
   const [recalculate, setRecalculate] = useState(0);
   const [loading, setLoading] = useState<boolean>(false);
   const isRunning = useRef(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
+  const [logs, setLogs] = useState<Log[]>([]);
 
   useEffect(() => {
     document.title = "Suiversary NFT Mining";
@@ -36,7 +37,7 @@ function App() {
       const newAccount = generateWallet(encodeKey(JSON.parse(cachedAccount)));
       setAccount(newAccount);
       setSuiKit(
-        new SuiKit({ secretKey: newAccount.privateKey, networkType: "mainnet" })
+        new SuiKit({ secretKey: newAccount.privateKey, networkType: "testnet" })
       );
       return;
     }
@@ -44,7 +45,7 @@ function App() {
     localStorage.setItem("account", JSON.stringify(newAccount.privateKey));
     setAccount(newAccount);
     setSuiKit(
-      new SuiKit({ secretKey: newAccount.privateKey, networkType: "mainnet" })
+      new SuiKit({ secretKey: newAccount.privateKey, networkType: "testnet" })
     );
   }, []);
 
@@ -83,18 +84,26 @@ function App() {
     getSuiBalance();
     getSuiObject();
   }, [suiKit, recalculate]);
+  const addNewLog = useCallback((log: LogInput) => {
+    setLogs((prev) => [...prev, { timestamp: Date.now(), ...log }]);
+  }, []);
 
   const handleMining = useCallback(async () => {
     if (!suiKit) return;
     setLoading(true);
     isRunning.current = true;
     while (isRunning.current) {
-      await observeObjects(suiKit);
-      await splitObjects(suiKit);
+      await observeObjects(suiKit, addNewLog);
+      await splitObjects(suiKit, addNewLog);
       setRecalculate((prev) => prev + 1);
-      console.log("continue: ", isRunning.current);
+
+      addNewLog({ message: `Running state: ${isRunning.current}` });
+      if (!isRunning.current) {
+        setLoading(false);
+        addNewLog({ message: "Minting Stopped", isError: true });
+      }
     }
-  }, [suiKit]);
+  }, [suiKit, addNewLog]);
 
   if (!suiKit) return null;
   return (
@@ -118,7 +127,7 @@ function App() {
               className="cancel"
               onClick={() => {
                 isRunning.current = false;
-                setLoading(false);
+                addNewLog({ message: "Mining has been canceled. Stopping..." });
               }}
             >
               Cancel
@@ -157,6 +166,18 @@ function App() {
               onClick={() => setShowPrivateKey((prev) => !prev)}
             />
           </div>
+        </div>
+      </div>
+
+      <div className="logs">
+        <h2>Logs</h2>
+        <div>
+          {logs.map((log, index) => (
+            <span key={index}>
+              <span>{new Date(log.timestamp).toLocaleString()}:&nbsp;</span>
+              <p className={log.isError ? "error" : ""}>{log.message}</p>
+            </span>
+          ))}
         </div>
       </div>
 
