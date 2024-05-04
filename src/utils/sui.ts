@@ -27,5 +27,3 @@ export const generateWallet = (secretKey?: string) => {
     privateKey,
   };
 };
-
-export const mining = () => {};

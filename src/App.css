@@ -14,9 +14,15 @@
       @apply text-[20px];
     }
 
-    & > button {
-      @apply bg-[#4DA2FF] text-white py-1 px-6 rounded-2xl font-semibold;
-      @apply hover:bg-[#3B8BFF] transition-colors active:bg-[#0c6dff];
+    & > .buttons {
+      @apply flex items-center justify-center gap-6;
+      & > button {
+        @apply bg-[#4DA2FF] text-white py-1 px-6 rounded-2xl font-semibold;
+        @apply hover:bg-[#3B8BFF] transition-colors active:bg-[#0c6dff];
+        &.cancel {
+          @apply bg-[#FF4D4D] hover:bg-[#FF3B3B] active:bg-[#ff0c0c];
+        }
+      }
     }
   }
   & > .inputs {
@@ -26,6 +32,12 @@
     & > input {
       @apply bg-white py-3 px-6 text-center rounded-xl !placeholder-black w-full;
     }
+  }
+
+  & > .log {
+    @apply px-6 py-4 max-sm:w-[90%] sm:min-w-[450px] mt-8;
+    @apply border-[3px] border-solid border-[#C0E6FF] rounded-2xl;
+    @apply flex flex-col items-start justify-start gap-3;
   }
 
   & > .how-to-play {
