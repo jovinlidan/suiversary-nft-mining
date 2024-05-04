@@ -90,18 +90,23 @@ function App() {
 
   const handleMining = useCallback(async () => {
     if (!suiKit) return;
-    setLoading(true);
-    isRunning.current = true;
-    while (isRunning.current) {
-      await observeObjects(suiKit, addNewLog);
-      await splitObjects(suiKit, addNewLog);
-      setRecalculate((prev) => prev + 1);
+    try {
+      setLoading(true);
+      isRunning.current = true;
+      while (isRunning.current) {
+        await observeObjects(suiKit, addNewLog);
+        await splitObjects(suiKit, addNewLog, isRunning);
+        setRecalculate((prev) => prev + 1);
 
-      addNewLog({ message: `Running state: ${isRunning.current}` });
-      if (!isRunning.current) {
-        setLoading(false);
-        addNewLog({ message: "Minting Stopped", isError: true });
+        addNewLog({ message: `Running state: ${isRunning.current}` });
+        if (!isRunning.current) {
+          setLoading(false);
+          addNewLog({ message: "Minting Stopped", isError: true });
+        }
       }
+    } catch (e) {
+      isRunning.current = false;
+      setLoading(false);
     }
   }, [suiKit, addNewLog]);
 
@@ -115,22 +120,25 @@ function App() {
         <span>SUI Objects: {objectCount.total}</span>
         <span>Found Object: {objectCount.found}</span>
         <div className="buttons">
-          <button onClick={handleMining} disabled={suiBalance === "0"}>
-            {suiBalance === "0"
-              ? "Please top up your address with SUI"
-              : loading
-              ? "Mining..."
-              : "Mining"}
-          </button>
+          {!(loading && !isRunning.current) && (
+            <button onClick={handleMining} disabled={suiBalance === "0"}>
+              {suiBalance === "0"
+                ? "Please top up your address with SUI"
+                : loading
+                ? "Mining..."
+                : "Mining"}
+            </button>
+          )}
           {loading && (
             <button
               className="cancel"
               onClick={() => {
+                if (loading && !isRunning.current) return;
                 isRunning.current = false;
                 addNewLog({ message: "Mining has been canceled. Stopping..." });
               }}
             >
-              Cancel
+              {loading && !isRunning.current ? "Cancelling" : "Cancel"}
             </button>
           )}
         </div>

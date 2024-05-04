@@ -61,7 +61,11 @@ const submitProof = async (
   }
 };
 
-export const splitObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
+export const splitObjects = async (
+  suiKit: SuiKit,
+  addNewLog: AddNewLog,
+  isRunning: React.MutableRefObject<boolean>
+) => {
   try {
     do {
       const txb = new SuiTxBlock();
@@ -114,7 +118,7 @@ export const splitObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
           message: `Updating version: ${resp.digest}`,
         });
       }
-    } while (true);
+    } while (isRunning.current);
   } catch (e) {
     addNewLog({
       message: `Error when splitting objects: ${JSON.stringify(e)}`,
