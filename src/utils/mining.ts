@@ -57,6 +57,7 @@ const submitProof = async (
   } catch (e) {
     addNewLog({
       message: `Error when submitting proof: ${JSON.stringify(e)}`,
+      isError: true,
     });
   }
 };
@@ -91,11 +92,13 @@ export const splitObjects = async (
           if (changes.objectId.startsWith("0x0000")) {
             addNewLog({
               message: `Hash Found: ${changes.objectId}`,
+              color: "bg-green",
             });
             ok = true;
           } else if (changes.objectId.startsWith("0x00")) {
             addNewLog({
               message: `Almost rare: ${changes.objectId}`,
+              color: "gray",
             });
           }
         }
@@ -105,17 +108,20 @@ export const splitObjects = async (
         const resp = await suiKit.signAndSendTxn(txBytes);
         addNewLog({
           message: `Creating hash: ${resp.digest}`,
+          color: "blue",
         });
         break;
       } else {
         addNewLog({
           message: "No rare hash found.",
+          color: "yellow",
         });
 
         const txb = new SuiTxBlock();
         const resp = await suiKit.signAndSendTxn(txb);
         addNewLog({
           message: `Updating version: ${resp.digest}`,
+          color: "blue",
         });
       }
     } while (isRunning.current);
@@ -160,11 +166,13 @@ const mergeObjects = async (
       gas = await refetchGas(gas, suiKit);
       addNewLog({
         message: `Objects merged: ${resp.digest}`,
+        color: "blue",
       });
     }
   } catch (e) {
     addNewLog({
       message: `Error when merging objects: ${JSON.stringify(e)}`,
+      isError: true,
     });
     throw e;
   }
@@ -212,6 +220,7 @@ export const observeObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
         gas = await refetchGas(gas, suiKit);
         addNewLog({
           message: `Proof submitted: ${resp?.digest}`,
+          color: "green",
         });
         coins.splice(i--, 1);
         counter++;
@@ -221,10 +230,12 @@ export const observeObjects = async (suiKit: SuiKit, addNewLog: AddNewLog) => {
     if (counter > 0) {
       addNewLog({
         message: `${counter} proofs submitted! NFT minted!`,
+        color: "green",
       });
     } else {
       addNewLog({
         message: "No proof submitted",
+        color: "yellow",
       });
     }
 

@@ -10,7 +10,7 @@ import eyeOpen from "./assets/eye-open.svg";
 import eyeClose from "./assets/eye-close.svg";
 import { Log, LogInput } from "./type";
 import MemoizedCopyIcon from "./components/copy-icon";
-
+import classNames from "classnames";
 function App() {
   const [account, setAccount] = useState<{
     address: string;
@@ -202,7 +202,9 @@ function App() {
           {logs.map((log, index) => (
             <span key={index}>
               <span>{new Date(log.timestamp).toLocaleString()}:&nbsp;</span>
-              <p className={log.isError ? "error" : ""}>{log.message}</p>
+              <p className={classNames(log.color, log.isError ? "error" : "")}>
+                {log.message}
+              </p>
             </span>
           ))}
         </div>

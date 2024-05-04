@@ -78,6 +78,21 @@
           &.error {
             @apply text-red-500;
           }
+          &.bg-green {
+            @apply bg-green-500 text-white;
+          }
+          &.gray {
+            @apply text-gray-400;
+          }
+          &.blue {
+            @apply text-blue-500;
+          }
+          &.yellow {
+            @apply text-yellow-500;
+          }
+          &.green {
+            @apply text-green-500;
+          }
         }
       }
     }
