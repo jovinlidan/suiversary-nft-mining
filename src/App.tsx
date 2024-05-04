@@ -37,7 +37,7 @@ function App() {
       const newAccount = generateWallet(encodeKey(JSON.parse(cachedAccount)));
       setAccount(newAccount);
       setSuiKit(
-        new SuiKit({ secretKey: newAccount.privateKey, networkType: "testnet" })
+        new SuiKit({ secretKey: newAccount.privateKey, networkType: "mainnet" })
       );
       return;
     }
@@ -45,7 +45,7 @@ function App() {
     localStorage.setItem("account", JSON.stringify(newAccount.privateKey));
     setAccount(newAccount);
     setSuiKit(
-      new SuiKit({ secretKey: newAccount.privateKey, networkType: "testnet" })
+      new SuiKit({ secretKey: newAccount.privateKey, networkType: "mainnet" })
     );
   }, []);
 
