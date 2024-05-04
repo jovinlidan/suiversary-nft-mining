@@ -1,10 +1,10 @@
+/* eslint-disable no-constant-condition */
 import {
   SUI_CLOCK_OBJECT_ID,
   SUI_TYPE_ARG,
   SuiKit,
   SuiTxBlock,
 } from "@scallop-io/sui-kit";
-// import { SUI_TYPE_ARG, SuiObjectRef } from "@mysten/sui.js";
 import { SuiObjectRef } from "@mysten/sui.js/client";
 import { contract } from "../contract/mainnet";
 
@@ -55,15 +55,51 @@ const submitProof = async (coin: Coin, gas: Coin, suiKit: SuiKit) => {
 
 export const splitObjects = async (suiKit: SuiKit) => {
   try {
-    const txb = new SuiTxBlock();
-    const array = new Array(500);
-    array.fill(1);
-    const arr = txb.splitCoins(txb.gas, array);
-    txb.transferObjects(arr, suiKit.currentAddress());
-    const resp = await suiKit.signAndSendTxn(txb);
-    console.log("Objects splitted: ", resp.digest);
+    do {
+      const txb = new SuiTxBlock();
+      const array = new Array(500);
+      array.fill(1);
+      let arr = txb.splitCoins(txb.gas, array);
+      txb.transferObjects(arr, suiKit.currentAddress());
+      arr = txb.splitCoins(txb.gas, array);
+      txb.transferObjects(arr, suiKit.currentAddress());
+      txb.setSender(suiKit.currentAddress());
+
+      const txBytes = await txb.build({
+        client: suiKit.client(),
+      });
+
+      const resp = await suiKit.client().dryRunTransactionBlock({
+        transactionBlock: txBytes,
+      });
+
+      let ok = false;
+      for (const changes of resp.objectChanges) {
+        if (changes.type === "created") {
+          if (changes.objectId.startsWith("0x0000")) {
+            console.log(`Hash Found: ${changes.objectId}`);
+            ok = true;
+          } else if (changes.objectId.startsWith("0x00")) {
+            console.log(`Almost rare: ${changes.objectId}`);
+          }
+        }
+      }
+
+      if (ok) {
+        const resp = await suiKit.signAndSendTxn(txBytes);
+        console.log(`Creating hash: ${resp.digest}`);
+        break;
+      } else {
+        console.log("No rare hash found.");
+
+        const txb = new SuiTxBlock();
+        const resp = await suiKit.signAndSendTxn(txb);
+        console.log(`Updating version: ${resp.digest}`);
+      }
+    } while (true);
   } catch (e) {
     console.error("Error when splitting objects: ", e);
+    throw e;
   }
 };
 
@@ -72,19 +108,31 @@ const mergeObjects = async (coins: Array<Coin>, gas: Coin, suiKit: SuiKit) => {
     while (coins.length > 1) {
       const txb = new SuiTxBlock();
       txb.setGasPayment([
-        { objectId: gas.objectId, version: gas.version, digest: gas.digest },
+        {
+          objectId: gas.objectId,
+          version: gas.version,
+          digest: gas.digest,
+        },
       ]);
 
       const subarr = coins.splice(1, 500);
       const objectIds = subarr.map((coin) => txb.object(coin.objectId));
       txb.mergeCoins(txb.gas, objectIds);
+
+      if (coins.length > 2) {
+        const subarr = coins.splice(1, 500);
+        const objectIds = subarr.map((coin) => txb.object(coin.objectId));
+        txb.mergeCoins(txb.gas, objectIds);
+      }
+
       const resp = await suiKit.signAndSendTxn(txb);
 
       gas = await refetchGas(gas, suiKit);
-      console.log("Objects merged: ", resp.digest);
+      console.log(`Objects merged: ${resp.digest}`);
     }
   } catch (e) {
     console.error("Error when merging objects: ", e);
+    throw e;
   }
 };
 
@@ -143,25 +191,6 @@ export const observeObjects = async (suiKit: SuiKit) => {
     await mergeObjects(coins, gas, suiKit);
   } catch (e) {
     console.error("Error when observing objects: ", e);
+    throw e;
   }
 };
-
-// export const mining = async (suiKit: SuiKit) => {
-//   return new Promise((resolve, reject) => {
-//     let loop = true;
-//     do {
-//       (()=> {
-
-//       })
-//       await observeObjects(suiKit);
-//       await splitObjects(suiKit);
-//     }
-//     while(loop);
-
-//     return ()=> {
-//       loop = false;
-//     }
-//   });
-//   return async () => {
-//   };
-// };
