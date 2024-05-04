@@ -207,6 +207,17 @@ function App() {
               </p>
             </span>
           ))}
+          {logs.length === 0 && <p>No logs available</p>}
+          {logs.length > 0 && !loading && !isRunning.current && (
+            <button
+              className="clear-logs"
+              onClick={() => {
+                setLogs([]);
+              }}
+            >
+              Clear Logs
+            </button>
+          )}
         </div>
       </div>
 

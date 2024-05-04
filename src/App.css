@@ -65,7 +65,7 @@
     }
     & > div {
       @apply w-full flex  justify-between gap-3 flex-col;
-      @apply overflow-y-auto;
+      @apply overflow-y-auto pb-2;
 
       & > span {
         @apply flex w-full;
@@ -95,6 +95,11 @@
           }
         }
       }
+    }
+    & button {
+      @apply cursor-pointer;
+      @apply text-white py-1 px-6 rounded-2xl font-semibold;
+      @apply bg-[#FF4D4D] hover:bg-[#FF3B3B] active:bg-[#ff0c0c];
     }
   }
 
