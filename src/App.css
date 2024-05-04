@@ -58,13 +58,15 @@
     @apply px-6 py-4 max-sm:w-[90%] sm:min-w-[450px] mt-8;
     @apply border-[3px] border-solid border-[#C0E6FF] rounded-2xl;
     @apply flex flex-col items-start justify-start gap-3;
-    @apply max-h-[400px] overflow-y-auto max-w-[600px];
+    @apply max-h-[400px]  max-w-[600px];
 
     & > h2 {
       @apply font-semibold text-[16px] uppercase;
     }
     & > div {
       @apply w-full flex  justify-between gap-3 flex-col;
+      @apply overflow-y-auto;
+
       & > span {
         @apply flex w-full;
         & > span {

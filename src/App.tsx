@@ -27,6 +27,7 @@ function App() {
   const isRunning = useRef(false);
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);
+  const logsListRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const cachedAccount = localStorage.getItem("account");
@@ -97,8 +98,16 @@ function App() {
 
         addNewLog({ message: `Running state: ${isRunning.current}` });
         if (!isRunning.current) {
-          setLoading(false);
           addNewLog({ message: "Minting Stopped", isError: true });
+          setLoading(false);
+          setTimeout(() => {
+            logsListRef.current?.scrollTo({
+              behavior: "smooth",
+              top:
+                logsListRef.current.scrollTop +
+                logsListRef.current.scrollHeight,
+            });
+          }, 200);
         }
       }
     } catch (e) {
@@ -106,6 +115,15 @@ function App() {
       setLoading(false);
     }
   }, [suiKit, addNewLog]);
+
+  useEffect(() => {
+    if (isRunning.current) {
+      logsListRef.current?.scrollTo({
+        behavior: "smooth",
+        top: logsListRef.current.scrollTop + logsListRef.current.scrollHeight,
+      });
+    }
+  }, [logs, loading]);
 
   if (!suiKit) return null;
   return (
@@ -180,7 +198,7 @@ function App() {
 
       <div className="logs">
         <h2>Logs</h2>
-        <div>
+        <div ref={logsListRef}>
           {logs.map((log, index) => (
             <span key={index}>
               <span>{new Date(log.timestamp).toLocaleString()}:&nbsp;</span>
