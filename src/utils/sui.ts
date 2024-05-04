@@ -1,5 +1,9 @@
 import { Ed25519Keypair } from "@mysten/sui.js/keypairs/ed25519";
-import { decodeSuiPrivateKey } from "@mysten/sui.js/cryptography";
+import {
+  decodeSuiPrivateKey,
+  encodeSuiPrivateKey,
+} from "@mysten/sui.js/cryptography";
+import { fromHEX } from "@scallop-io/sui-kit";
 
 const uint8ArrayToHex = (arr: Uint8Array) => {
   return arr.reduce(
@@ -26,4 +30,8 @@ export const generateWallet = (secretKey?: string) => {
     address,
     privateKey,
   };
+};
+
+export const encodeKey = (secretKey: string) => {
+  return encodeSuiPrivateKey(fromHEX(secretKey), "ED25519");
 };
