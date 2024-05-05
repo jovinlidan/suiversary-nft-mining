@@ -2,7 +2,7 @@
 import suiversaryNft from "/suiversary.png";
 import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { encodeKey, generateWallet } from "./utils/sui";
+import { generateWallet } from "./utils/sui";
 import { SUI_TYPE_ARG, SuiKit } from "@scallop-io/sui-kit";
 import BigNumber from "bignumber.js";
 import { observeObjects, splitObjects } from "./utils/mining";
@@ -32,11 +32,14 @@ function App() {
   useEffect(() => {
     const cachedAccount = localStorage.getItem("account");
     if (cachedAccount) {
-      const newAccount = generateWallet(encodeKey(JSON.parse(cachedAccount)));
+      const newAccount = generateWallet(JSON.parse(cachedAccount));
       setAccount(newAccount);
       setSuiKit(
         new SuiKit({ secretKey: newAccount.privateKey, networkType: "mainnet" })
       );
+      if (JSON.parse(cachedAccount) !== newAccount.privateKey) {
+        localStorage.setItem("account", JSON.stringify(newAccount.privateKey));
+      }
       return;
     }
     const newAccount = generateWallet();
