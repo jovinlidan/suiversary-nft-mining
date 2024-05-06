@@ -166,7 +166,7 @@ function App() {
       } while (cursor);
 
       return objects;
-    }
+    };
 
     const suiObjects = await getAllSuiObjects();
 
@@ -177,18 +177,23 @@ function App() {
         largestSuiObject = object;
       }
     });
-    
+
     while (suiObjects.length > 1) {
       const tx = new SuiTxBlock();
-      tx.setGasPayment([{
-        digest: largestSuiObject.digest,
-        objectId: largestSuiObject.coinObjectId,
-        version: largestSuiObject.version,
-      }])
-      tx.mergeCoins(tx.gas, 
+      tx.setGasPayment([
+        {
+          digest: largestSuiObject.digest,
+          objectId: largestSuiObject.coinObjectId,
+          version: largestSuiObject.version,
+        },
+      ]);
+      tx.mergeCoins(
+        tx.gas,
         suiObjects
           .slice(0, 500)
-          .filter((object) => object.coinObjectId !== largestSuiObject.coinObjectId)
+          .filter(
+            (object) => object.coinObjectId !== largestSuiObject.coinObjectId
+          )
           .map((object) => tx.object(object.coinObjectId))
       );
       tx.setSenderIfNotSet(suiKit.getAddress());
@@ -196,7 +201,9 @@ function App() {
 
       const res = await suiKit.signAndSendTxn(txBytes);
 
-      const objectData = await suiKit.getObjects([largestSuiObject.coinObjectId]);
+      const objectData = await suiKit.getObjects([
+        largestSuiObject.coinObjectId,
+      ]);
       largestSuiObject.digest = objectData[0].digest;
       largestSuiObject.version = objectData[0].version;
 
@@ -231,7 +238,7 @@ function App() {
         isError: res?.effects?.status.status === "failure",
       });
     }
-    
+
     const tx = new SuiTxBlock();
     tx.transferObjects([tx.gas], tx.pure(recipientAddress!));
     tx.setSenderIfNotSet(suiKit.getAddress());
@@ -242,9 +249,9 @@ function App() {
       message: `Transferring all SUI! Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
       isError: res?.effects?.status.status === "failure",
     });
-  
+
     setRecalculate((prev) => prev + 1);
-  }, [addNewLog, recipientAddress, suiBalance, suiKit]);
+  }, [addNewLog, recipientAddress, suiKit]);
 
   const handleChangeRecipientAddress = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
