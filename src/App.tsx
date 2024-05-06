@@ -149,7 +149,7 @@ function App() {
                 : loading
                 ? "Mining..."
                 : "Mining"} */}
-              Mining Ended 100/100
+              Mining Ended 110/110
             </button>
           )}
           {loading && (
