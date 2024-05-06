@@ -17,6 +17,7 @@ import eyeClose from "./assets/eye-close.svg";
 import { Log, LogInput } from "./type";
 import MemoizedCopyIcon from "./components/copy-icon";
 import classNames from "classnames";
+import { CoinStruct } from "@mysten/sui.js/src/client";
 
 function App() {
   const [account, setAccount] = useState<{
@@ -147,51 +148,101 @@ function App() {
           "0xdb9f34b220e76e333553dc4c4bc6f3110d5c103b60316562eeab34b1fa902349::suiversary::Suiversary",
       },
     });
-    const gasAmount = [0.01, 0.02, 0.03, 0.04];
-    for (let i = 0; i < gasAmount.length; i++) {
-      if (gasAmount[i] > Number(suiBalance)) {
-        addNewLog({
-          message: `Error, Not enough SUI balance to transfer with gas`,
-          isError: true,
-        });
-        break;
-      }
-      const tx = new SuiTxBlock();
 
-      const txB = tx.transferSui(
-        tx.pure(recipientAddress!),
-        tx.pure(Math.floor((Number(suiBalance) - gasAmount[i]) * 1e9))
-      );
-      if (otherObjects.data.length !== 0) {
-        tx.transferObjects(
-          otherObjects.data.map((object) => {
-            return Inputs.ObjectRef({
-              digest: object.data!.digest,
-              objectId: object?.data!.objectId,
-              version: object?.data!.version,
-            });
-          }),
-          tx.pure(recipientAddress!)
-        );
+    const getAllSuiObjects = async () => {
+      let cursor = null;
+      const objects = new Array<CoinStruct>();
+
+      do {
+        const resp = await suiKit.client().getCoins({
+          owner: suiKit.currentAddress(),
+          coinType: SUI_TYPE_ARG,
+          cursor: cursor,
+          limit: 50,
+        });
+
+        objects.push(...resp.data);
+        cursor = resp.nextCursor;
+      } while (cursor);
+
+      return objects;
+    }
+
+    const suiObjects = await getAllSuiObjects();
+
+    let largestSuiObject = suiObjects[0];
+    // find the largest balance
+    suiObjects.forEach((object) => {
+      if (parseInt(object.balance) > parseInt(largestSuiObject.balance)) {
+        largestSuiObject = object;
       }
+    });
+    
+    while (suiObjects.length > 1) {
+      const tx = new SuiTxBlock();
+      tx.setGasPayment([{
+        digest: largestSuiObject.digest,
+        objectId: largestSuiObject.coinObjectId,
+        version: largestSuiObject.version,
+      }])
+      tx.mergeCoins(tx.gas, 
+        suiObjects
+          .slice(0, 500)
+          .filter((object) => object.coinObjectId !== largestSuiObject.coinObjectId)
+          .map((object) => tx.object(object.coinObjectId))
+      );
       tx.setSenderIfNotSet(suiKit.getAddress());
-      const txBytes = await txB.build({ client: suiKit.client() });
+      const txBytes = await tx.build({ client: suiKit.client() });
+
+      const res = await suiKit.signAndSendTxn(txBytes);
+
+      const objectData = await suiKit.getObjects([largestSuiObject.coinObjectId]);
+      largestSuiObject.digest = objectData[0].digest;
+      largestSuiObject.version = objectData[0].version;
+
+      console.dir(res);
+
+      addNewLog({
+        message: `Merging coins! Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
+        isError: res?.effects?.status.status === "failure",
+      });
+    }
+
+    if (otherObjects.data.length !== 0) {
+      const tx = new SuiTxBlock();
+      tx.transferObjects(
+        otherObjects.data.map((object) => {
+          return Inputs.ObjectRef({
+            digest: object.data!.digest,
+            objectId: object?.data!.objectId,
+            version: object?.data!.version,
+          });
+        }),
+        tx.pure(recipientAddress!)
+      );
+      tx.setSenderIfNotSet(suiKit.getAddress());
+      const txBytes = await tx.build({ client: suiKit.client() });
 
       const res = await suiKit.signAndSendTxn(txBytes);
       console.dir(res);
 
       addNewLog({
-        message: `Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
+        message: `Transferring objects and NFTs! Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
         isError: res?.effects?.status.status === "failure",
       });
-      if (res?.effects?.status.status === "failure") {
-        addNewLog({
-          message: `Error, Trying with bigger gas amount... (${gasAmount[i]})`,
-          isError: true,
-        });
-      }
-      if (res?.effects?.status.status === "success") break;
     }
+    
+    const tx = new SuiTxBlock();
+    tx.transferObjects([tx.gas], tx.pure(recipientAddress!));
+    tx.setSenderIfNotSet(suiKit.getAddress());
+    const txBytes = await tx.build({ client: suiKit.client() });
+    const res = await suiKit.signAndSendTxn(txBytes);
+    console.dir(res);
+    addNewLog({
+      message: `Transferring all SUI! Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
+      isError: res?.effects?.status.status === "failure",
+    });
+  
     setRecalculate((prev) => prev + 1);
   }, [addNewLog, recipientAddress, suiBalance, suiKit]);
 
