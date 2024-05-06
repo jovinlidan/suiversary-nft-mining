@@ -139,12 +139,17 @@ function App() {
         <span>Found Object: {objectCount.found}</span>
         <div className="buttons">
           {!(loading && !isRunning.current) && (
-            <button onClick={handleMining} disabled={suiBalance === "0"}>
-              {suiBalance === "0"
+            <button
+              onClick={handleMining}
+              // disabled={suiBalance === "0"}
+              disabled
+            >
+              {/* {suiBalance === "0"
                 ? "Please top up your address with SUI"
                 : loading
                 ? "Mining..."
-                : "Mining"}
+                : "Mining"} */}
+              Mining Ended 100/100
             </button>
           )}
           {loading && (
