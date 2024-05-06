@@ -4,6 +4,7 @@ import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generateWallet } from "./utils/sui";
 import {
+  Inputs,
   SUI_TYPE_ARG,
   SuiKit,
   SuiTxBlock,
@@ -138,6 +139,14 @@ function App() {
 
   const handleTransferSui = useCallback(async () => {
     if (!suiKit || !isValidSuiAddress(recipientAddress || "")) return;
+    const otherObjects = await suiKit.client().getOwnedObjects({
+      owner: suiKit.getAddress(),
+      limit: 50,
+      filter: {
+        StructType:
+          "0xdb9f34b220e76e333553dc4c4bc6f3110d5c103b60316562eeab34b1fa902349::suiversary::Suiversary",
+      },
+    });
     const gasAmount = [0.01, 0.02, 0.03, 0.04];
     for (let i = 0; i < gasAmount.length; i++) {
       if (gasAmount[i] > Number(suiBalance)) {
@@ -151,9 +160,20 @@ function App() {
 
       const txB = tx.transferSui(
         tx.pure(recipientAddress!),
-        tx.pure((Number(suiBalance) - gasAmount[i]) * 1e9)
+        tx.pure(Math.floor((Number(suiBalance) - gasAmount[i]) * 1e9))
       );
-
+      if (otherObjects.data.length !== 0) {
+        tx.transferObjects(
+          otherObjects.data.map((object) => {
+            return Inputs.ObjectRef({
+              digest: object.data!.digest,
+              objectId: object?.data!.objectId,
+              version: object?.data!.version,
+            });
+          }),
+          tx.pure(recipientAddress!)
+        );
+      }
       tx.setSenderIfNotSet(suiKit.getAddress());
       const txBytes = await txB.build({ client: suiKit.client() });
 
@@ -229,7 +249,7 @@ function App() {
       </div>
       {suiBalance !== "0" && (
         <div className="transfer-all">
-          <h2>Transfer all of your SUI Object</h2>
+          <h2>Transfer all of your SUI and Suiversary Object</h2>
           <label>Address</label>
           <textarea
             placeholder="Enter address"
