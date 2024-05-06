@@ -3,7 +3,12 @@ import suiversaryNft from "/suiversary.png";
 import "./App.css";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { generateWallet } from "./utils/sui";
-import { SUI_TYPE_ARG, SuiKit } from "@scallop-io/sui-kit";
+import {
+  SUI_TYPE_ARG,
+  SuiKit,
+  SuiTxBlock,
+  isValidSuiAddress,
+} from "@scallop-io/sui-kit";
 import BigNumber from "bignumber.js";
 import { observeObjects, splitObjects } from "./utils/mining";
 import eyeOpen from "./assets/eye-open.svg";
@@ -11,6 +16,7 @@ import eyeClose from "./assets/eye-close.svg";
 import { Log, LogInput } from "./type";
 import MemoizedCopyIcon from "./components/copy-icon";
 import classNames from "classnames";
+
 function App() {
   const [account, setAccount] = useState<{
     address: string;
@@ -28,6 +34,8 @@ function App() {
   const [showPrivateKey, setShowPrivateKey] = useState(false);
   const [logs, setLogs] = useState<Log[]>([]);
   const logsListRef = useRef<HTMLDivElement | null>(null);
+  const [recipientAddress, setRecipientAddress] = useState<string>();
+  const [error, setError] = useState<string>();
 
   useEffect(() => {
     const cachedAccount = localStorage.getItem("account");
@@ -65,7 +73,7 @@ function App() {
           owner: suiKit.currentAddress(),
           coinType: SUI_TYPE_ARG,
           cursor: nextCursor,
-          limit: 100000,
+          limit: 50,
         });
         objects.data.forEach((object) => {
           if (object.coinObjectId.startsWith("0x0000")) {
@@ -128,6 +136,59 @@ function App() {
     }
   }, [logs, loading]);
 
+  const handleTransferSui = useCallback(async () => {
+    if (!suiKit || !isValidSuiAddress(recipientAddress || "")) return;
+    const gasAmount = [0.01, 0.02, 0.03, 0.04];
+    for (let i = 0; i < gasAmount.length; i++) {
+      if (gasAmount[i] > Number(suiBalance)) {
+        addNewLog({
+          message: `Error, Not enough SUI balance to transfer with gas`,
+          isError: true,
+        });
+        break;
+      }
+      const tx = new SuiTxBlock();
+
+      const txB = tx.transferSui(
+        tx.pure(recipientAddress!),
+        tx.pure((Number(suiBalance) - gasAmount[i]) * 1e9)
+      );
+
+      tx.setSenderIfNotSet(suiKit.getAddress());
+      const txBytes = await txB.build({ client: suiKit.client() });
+
+      const res = await suiKit.signAndSendTxn(txBytes);
+      console.dir(res);
+
+      addNewLog({
+        message: `Digest: ${res?.effects?.transactionDigest}, Status: ${res?.effects?.status.status}`,
+        isError: res?.effects?.status.status === "failure",
+      });
+      if (res?.effects?.status.status === "failure") {
+        addNewLog({
+          message: `Error, Trying with bigger gas amount... (${gasAmount[i]})`,
+          isError: true,
+        });
+      }
+      if (res?.effects?.status.status === "success") break;
+    }
+    setRecalculate((prev) => prev + 1);
+  }, [addNewLog, recipientAddress, suiBalance, suiKit]);
+
+  const handleChangeRecipientAddress = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      setRecipientAddress(e.target.value);
+      if (e.target.value === suiKit?.currentAddress()) {
+        setError("Please provide different address");
+        return;
+      }
+      if (!isValidSuiAddress(e.target.value)) {
+        setError("Invalid SUI Address");
+      } else setError(undefined);
+    },
+    [suiKit]
+  );
+
   if (!suiKit) return null;
   return (
     <div className="home-page">
@@ -166,6 +227,28 @@ function App() {
           )}
         </div>
       </div>
+      {suiBalance !== "0" && (
+        <div className="transfer-all">
+          <h2>Transfer all of your SUI Object</h2>
+          <label>Address</label>
+          <textarea
+            placeholder="Enter address"
+            onChange={handleChangeRecipientAddress}
+          />
+
+          <button
+            onClick={handleTransferSui}
+            className={classNames(error ? "error" : "")}
+            disabled={!suiKit || !recipientAddress}
+          >
+            {!recipientAddress
+              ? "Enter SUI Address"
+              : error
+              ? error
+              : "Transfer"}
+          </button>
+        </div>
+      )}
 
       <div className="inputs">
         <div>
